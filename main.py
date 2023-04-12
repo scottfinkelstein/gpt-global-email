@@ -1,9 +1,9 @@
 import streamlit as st
-from langchain import PromptTemplate
+from langchain import PromptTemplate, LLMChain
 from langchain.llms import OpenAI
-import os
-
-os.environ['OPENAI_API_KEY'] = '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'
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts.chat import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate, AIMessagePromptTemplate
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
 
 template = """
     Below is an email that may be poorly worded. Your goal is to:
@@ -27,16 +27,18 @@ template = """
     YOUR RESPONSE:
 """
 
-prompt = PromptTemplate(
-    input_variables=['tone', 'dialect', 'email'],
-    template=template
-)
 
-def load_LLM():
-    llm = OpenAI(temperature=0.5)
-    return llm
 
-llm = load_LLM()
+# prompt = PromptTemplate(
+#     input_variables=['tone', 'dialect', 'email'],
+#     template=template
+# )
+
+# def load_LLM():
+#     llm = OpenAI(temperature=0.5)
+#     return llm
+
+# llm = load_LLM()
 
 st.set_page_config(page_title='Globalize Email', page_icon=':robot:')
 st.header('Globalize Text')
@@ -74,7 +76,12 @@ email_input = get_text()
 st.markdown('## Your Converted Email:')
 
 if email_input:
-    
-    prompt_with_email = prompt.format(tone=option_tone, dialect=option_dialect, email=email_input)
-    formatted_email = llm(prompt_with_email)
+    chat = ChatOpenAI(temperature=0)
+
+    human_message_prompt = HumanMessagePromptTemplate.from_template(template)
+    chat_prompt = ChatPromptTemplate.from_messages([human_message_prompt])
+
+    chain = LLMChain(llm=chat, prompt=chat_prompt)
+    formatted_email = chain.run(tone=option_tone, dialect=option_dialect, email=email_input)
+   
     st.write(formatted_email)
